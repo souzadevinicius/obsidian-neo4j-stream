@@ -5,7 +5,7 @@
   "main": "main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/HEmile/juggl.git"
+    "url": "https://github.com/souzadevinicius/obsidian-neo4j-stream.git"
   },
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
@@ -50,7 +50,8 @@
   "dependencies": {
     "@mdi/js": "^5.9.55",
     "cypher-query-builder": "^6.0.4",
-    "juggl-api": "github:hemile/juggl-api",
+    "d3": "^7.9.0",
+    "juggl-api": "github:souzadevinicius/juggl-api#efe0202b330e97302e5a5da19e256066a64f7e6d",
     "neo4j-driver": "^4.2.3"
   }
 }

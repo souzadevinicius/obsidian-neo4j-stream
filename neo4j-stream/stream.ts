@@ -80,16 +80,13 @@ export class Neo4jStream extends Component {
           });
       const connection = this.session();
       if (this.settings.debug) {
-        console.log('Removing existing data');
+        console.log('Removing existing data' + this.vault.getName());
       }
 
-      // await this.connection.run("MATCH (n) RETURN n LIMIT 10").then(res => {
-      //     console.log(res);
-      // });
-
-      await this.executeQueries([new Query()
-          .matchNode('n', {SMD_vault: this.vault.getName()})
-          .detachDelete('n')]);
+      await this.session().run(`
+        MATCH (n)
+        DETACH DELETE n
+    `);
       console.log('Iterating md files');
       // let noteQueries: Query[] = [];
       const markdownFiles = this.vault.getMarkdownFiles();
@@ -322,6 +319,68 @@ export class Neo4jStream extends Component {
       console.log(file);
       return null;
     }
+
+    parseNeo4jResult(records: any[]) {
+      const nodes: any[] = [];
+      const relationships: any[] = [];
+      records.map(record => {
+          // Iterate over each key in the record
+          for (const key of record.keys) {
+            const value = record.get(key);
+            if (value) {
+                if (value.labels) { // It's a node
+                    const nodeProps = value.properties;
+                    if (!nodes.some(node => node.nodeid === nodeProps.id)) {
+                      nodes.push({ 
+                        id: value.identity.low, 
+                        nodeid: nodeProps.id, 
+                        path: nodeProps.path, 
+                        uri: nodeProps.obsidian_url, 
+                        label: nodeProps.name || 'Unnamed',
+                        x:Math.random()*1000,
+                        y:Math.random()*1000, 
+                        parent: true
+                      });
+                    }
+                  } else if (Array.isArray(value)) {
+                    value.forEach((v:any) =>{
+                      if (relationships.some(node => node?.source?.id === v?.identity?.low)) {
+                        return;
+                      }
+                        const parents =  nodes.filter((node: {parent: boolean;}) => node.parent);
+                        const sourceNode = nodes.find((node: { id: string; }) => node.id === parents[parents.length-1]?.id);
+                        const target = { 
+                          id: v.identity.low, 
+                          nodeid: v.identity.low, 
+                          label: v.properties.name || 'Unnamed',
+                          x:Math.random()*1000,
+                          y:Math.random()*1000 
+                        }
+                        
+                        if (!relationships.some(node => node.source.id === sourceNode.id && node.target.id === target.id ))
+                          relationships.push({ source: sourceNode, target: target });
+                        
+                        if (!nodes.some(node => node?.id === target.id))
+                          nodes.push(target);
+                    })
+                  } else if (value.type) { // It's a relationship
+                    if (relationships.some(node => node?.source?.id === value?.start?.low && node?.target?.id === value?.end?.low && node?.type === value?.type)) {
+                      continue;
+                    }
+                      const sourceNode = nodes.find((node: { id: string; }) => node.id === value.start.low);
+                      const targetNode = nodes.find((node: { id: string; }) => node.id === value.end.low);
+                
+                      // const sourceNodeId = value.start.low;
+                      // const targetNodeId = value.end.low;
+                      relationships.push({ source: sourceNode, target: targetNode, type: value.type });
+                }
+            }
+          }
+  
+        });
+        return { nodes, relationships };
+  }
+  
 
     async metadataCacheOnChanged(file: TAbstractFile) {
       // It's always called after the respective other events.

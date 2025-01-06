@@ -3,7 +3,8 @@ import {nodeResolve} from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
 
-
+const FOLDER = '/home/vinicius/Documents/NotesPC/.obsidian/plugins'
+// const FOLDER = '/home/vinicius/workspace/vault/.obsidian/plugins'
 export default {
   input: 'main.ts',
   output: {
@@ -21,8 +22,9 @@ export default {
     nodeResolve({browser: true}),
     copy({
       targets: [
-        {src: 'main.js', dest: '../../juggl/docs/.obsidian/plugins/neo4j-stream'},
-        {src: 'styles.css', dest: '../../juggl/docs/.obsidian/plugins/neo4j-stream'},
+        {src: '../manifest.json', dest: `${FOLDER}/neo4j-stream`},
+        {src: 'main.js', dest: `${FOLDER}/neo4j-stream`},
+        {src: 'styles.css', dest: `${FOLDER}/neo4j-stream`},
       ],
       hook: 'writeBundle',
     }),
